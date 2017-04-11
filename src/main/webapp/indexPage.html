@@ -1,0 +1,33 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Hackathon Project</title>
+	<meta name="description" content="Get local gas prices">
+	<meta name="author" content="Hackathon Project - Team 6">
+
+	<style>
+	  .speech {border: 1px solid #DDD; width: 300px; padding: 0; margin: 0}
+	  .speech input {border: 0; width: 240px; display: inline-block; height: 30px;}
+	  .speech img {float: right; width: 40px }
+	</style>
+	<script type="text/javascript" src="./javascript/speech/gasSpeech.js"></script>
+  
+</head>
+
+<body>
+	<form id="formId" method="get" action="https://www.google.com/search" target="_blank">
+	Your Postal Code: 
+	  <div class="speech">
+		<input type="text" name="q" id="transcript" placeholder="Click Microphone to Speak" />
+		<img onclick="startRecognition()" src="./images/speech/mic.gif" />
+	  </div>
+	  <br><br>
+	  <input type="submit" value="Submit">
+	  
+	</form>
+
+</body>
+</html>

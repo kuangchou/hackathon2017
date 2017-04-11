@@ -9,6 +9,8 @@
 <html>
   <head>
     <title>$Title$</title>
+    <link rel="stylesheet" type="text/css" href="./styles/speech.css"/>
+    <script type="text/javascript" src="./javascript/speech/gasSpeech.js"></script>
     <script src="./javascript/common/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCojRm8c3N0kGnXT5EstKMZsL25k2aKdks&callback=getLocation"
         async defer></script>
@@ -114,8 +116,20 @@
     </script>
   </head>
   <body>
-  <div id="general"><strong>general</strong></div>
-  <div id="address"><strong>address</strong></div>
-  <div id="coords"><strong>coords</strong></div>
+    <div id="general"><strong>general</strong></div>
+    <div id="address"><strong>address</strong></div>
+    <div id="coords"><strong>coords</strong></div>
+
+    <br/><br/>
+    <form id="formId" method="get" action="https://www.google.com/search" target="_blank">
+      Your Postal Code:
+      <div class="speech">
+        <input type="text" name="q" id="transcript" placeholder="Click Microphone to Speak" />
+        <img onclick="startRecognition()" src="./images/speech/mic.gif" />
+      </div>
+      <br/><br/>
+      <input type="submit" value="Get Local Gas Prices"/>
+  	</form>
+
   </body>
 </html>

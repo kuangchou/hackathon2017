@@ -2,12 +2,10 @@
 // HTML5 Speech Recognition API
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-function say(messageToSay)
-{
+function say(messageToSay) {
 	var msg = new SpeechSynthesisUtterance(messageToSay);
 	window.speechSynthesis.speak(msg);
 }
-
 
 if (!SpeechRecognition) {
 	var messageToSay = "Speech Recognition is not supported by this browser!";
@@ -16,8 +14,6 @@ if (!SpeechRecognition) {
 }
 
 function startRecognition() {
-//	document.getElementById('formId').submit();
-	
 	var messageToSay = "Please Speak your postal code!";
 	say(messageToSay);
 	
@@ -37,13 +33,9 @@ function startRecognition() {
 	recognition.onresult = function(e) {
 		document.getElementById('transcript').value = e.results[0][0].transcript;					 
 		console.log('Recognition result processed');
-		
-		try {
-			document.getElementById('formId').submit();
-			console.log('Form submitted');
-		} catch(ex) {
-			console.log('Form submission error: ' + ex.message);
-		}
+
+    document.getElementById('formId').submit();
+    console.log('Form submitted');
 
 		recognition.stop();
 		console.log('Recognition stopped');
@@ -54,18 +46,15 @@ function startRecognition() {
 		recognition.stop();
 		console.log('Recognition stopped');
 	};
+
 	recognition.onnomatch = function(e) {
 		console.log("Recognition no match!");
 		recognition.stop();
 		console.log('Recognition stopped');
 	};
-
-	
 }
 
-
-function Station(name, stationArea, price, time)
-{
+function Station(name, stationArea, price, time) {
 	this.name = name;
 	this.stationArea = stationArea;
 	this.price = price;
@@ -86,8 +75,10 @@ function getStations(){
 speakStations(getStations());
 
 function speakStations(stations) {
-	for (var i = 0; i< stations.length; i++)
-	{
+  if(stations === null || stations.length === 0) {
+    return;
+  }
+	for (var i = 0; i < stations.length; i++) {
 		var messageToSay = "Station " + (i+1) + " " + stations[i].name + "at " + stations[i].stationArea + " The price is " + stations[i].price + " reported " + stations[i].time;
 		say(messageToSay);
 	}

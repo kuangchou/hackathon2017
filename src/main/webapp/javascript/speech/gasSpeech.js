@@ -16,7 +16,8 @@ if (!SpeechRecognition) {
 function startRecognition() {
 	var messageToSay = "Please Speak your postal code!";
 	say(messageToSay);
-	
+	showBigRedMic();
+
 	var recognition = new SpeechRecognition();
 	recognition.continuous = false;
 	recognition.interimResults = false;
@@ -39,18 +40,21 @@ function startRecognition() {
 
 		recognition.stop();
 		console.log('Recognition stopped');
+		hideBigRedMic();
 	};
 
 	recognition.onerror = function(e) {
 		console.log("Recognition error!");
 		recognition.stop();
 		console.log('Recognition stopped');
+		hideBigRedMic();
 	};
 
 	recognition.onnomatch = function(e) {
 		console.log("Recognition no match!");
 		recognition.stop();
 		console.log('Recognition stopped');
+		hideBigRedMic();
 	};
 }
 
@@ -83,4 +87,29 @@ function speakStations(stations) {
 		say(messageToSay);
 	}
 
+}
+
+function showBigRedMic() {
+	var micBigRed = document.getElementById('micBigRed');
+	if(micBigRed !== null) {
+		micBigRed.style.display = "block";
+	}
+}
+
+function hideBigRedMic() {
+	var micBigRed = document.getElementById('micBigRed');
+	if(micBigRed !== null) {
+		micBigRed.style.display = "none";
+	}
+}
+
+function isBigRedMicShown() {
+	var micBigRed = document.getElementById('micBigRed');
+	if(micBigRed === null) {
+			return false;
+		}
+	if(micBigRed.style.display === "block") {
+		return true;
+	}
+	return false;
 }

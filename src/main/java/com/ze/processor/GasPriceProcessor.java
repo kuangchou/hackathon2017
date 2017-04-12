@@ -3,6 +3,7 @@ package com.ze.processor;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,7 +12,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.ze.bean.GasPrice;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -21,14 +26,23 @@ import org.w3c.tidy.Tidy;
 
 public class GasPriceProcessor {
 
-  private void process() throws DataProcessorException {
-    final Map<String, Object> record = new HashMap<String, Object>();
+  private final AtomicLong counter = new AtomicLong();
+
+  private static final Pattern LAST_UPDATE_PATTERN =
+          Pattern.compile("(?i).*?(\\d+\\s+(?:minute|hour|day)s?\\s+ago)");
+
+  public List<GasPrice> process(final String zipCode) throws DataProcessorException {
+    final Map<String, String> record = new HashMap<String, String>();
+    final List<GasPrice> recordList = new ArrayList<>();
     List<String> headerList = null;
     InputStream inputStream = null;
 
     try {
       try {
-        final URI uri = new URI("http://www.bcgasprices.com/GasPriceSearch.aspx?fuel=A&qsrch=V7C%204R9");
+        final String sourecUrl =
+                String.format("http://www.bcgasprices.com/GasPriceSearch.aspx?fuel=A&qsrch=%s",
+                        zipCode.replaceAll(" ", "%20"));
+        final URI uri = new URI(sourecUrl);
         final URL url = uri.toURL(); // get URL from your uri object
         inputStream = url.openStream();
       }
@@ -47,27 +61,69 @@ public class GasPriceProcessor {
       for (Node rowNode = table.getFirstChild(); rowNode != null; rowNode = rowNode.getNextSibling()) {
         if ("thead".equalsIgnoreCase(rowNode.getNodeName())) {
           headerList = getTableRowAsList(rowNode.getFirstChild());
-          System.out.println("====>> " + headerList);
           continue;
         }
         if ("tbody".equalsIgnoreCase(rowNode.getNodeName())) {
           rowNode = rowNode.getFirstChild();
         }
 
-        List<String> values = getTableRowAsList(rowNode);
+        final List<String> values = getTableRowAsList(rowNode);
+        record.clear();
         for (int i = 0; i < headerList.size(); i++) {
-          record.put(headerList.get(i), values.get(i));
+          final String value = i < headerList.size() ? values.get(i).trim() : null;
+          if (value != null && !value.isEmpty()) {
+            record.put(headerList.get(i), value);
+          }
         }
-
         System.out.println("==============================");
-        for (Map.Entry<String, Object> ent : record.entrySet()) {
+        for (Map.Entry<String, String> ent : record.entrySet()) {
           System.out.println(ent.getKey() + " -->> " + ent.getValue());
+        }
+        GasPrice gasPrice = getGasPrice(record);
+        if (gasPrice != null) {
+          recordList.add(gasPrice);
         }
       }
     }
     finally {
       close(inputStream);
     }
+    return recordList;
+  }
+
+  private GasPrice getGasPrice(final Map<String, String> record) {
+    GasPrice gasPrice = null;
+    double price = getPrice(record.get("Price"));
+    if (price != -1) {
+      gasPrice = new GasPrice(
+              counter.incrementAndGet(),
+              getPrice(record.get("Price")),
+              record.get("Station"),
+              record.get("Area"),
+              getLastUpdated(record.get("Thanks")));
+    }
+    return gasPrice;
+  }
+
+  private String getLastUpdated(String thanks) {
+    String lastUpdated = null;
+    final Matcher matcher = LAST_UPDATE_PATTERN.matcher(thanks);
+    if (matcher.matches()) {
+      lastUpdated = matcher.group(1).trim();
+    }
+    return lastUpdated;
+  }
+
+  private double getPrice(String rawPrice) {
+    double price = -1;
+    try {
+      price = new BigDecimal(rawPrice.replaceAll("(?i)update", "").trim()).doubleValue();
+    }
+    catch (final NumberFormatException e) {
+      System.out.println("Unable to parse Gas Price from: " + rawPrice);
+    }
+
+    return price;
   }
 
   private List<String> getTableRowAsList(final Node rowNode) {
@@ -205,7 +261,7 @@ public class GasPriceProcessor {
   public static void main (String[] args)  { 
     GasPriceProcessor hw = new GasPriceProcessor();
     try {
-      hw.process();
+      hw.process("V7C 4R9");
     }
     catch (DataProcessorException e) {
       e.printStackTrace();

@@ -1,4 +1,4 @@
-<%--
+    <%--
   Created by IntelliJ IDEA.
   User: kuang
   Date: 4/10/2017
@@ -15,7 +15,7 @@
     /* Always set the map height explicitly to define the size of the div
      * element that contains the map. */
     #map {
-      height: 100%;
+      height: 95%;
     }
 
     /* Optional: Makes the sample page fill the window. */
@@ -27,6 +27,8 @@
   </style>
 
   <script src="./javascript/common/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
+  <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js">
+      </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCojRm8c3N0kGnXT5EstKMZsL25k2aKdks&callback=getLocation"
           async defer></script>
   <script language="javascript">
@@ -133,16 +135,68 @@
         }
       });
       console.log("Entering getAddressFromLatLang()");
-      var curLoc = { lat: lat, lng: lng };
+      var curLoc = {
+        lat: lat,
+        lng: lng
+      };
       var map = new google.maps.Map(document.getElementById('map'), {
         center: curLoc,
         scrollwheel: false,
-        zoom: 18,
+        zoom: 14
       });
       var marker = new google.maps.Marker({
         position: curLoc,
         map: map
       });
+      getGeoFromAddress(['4011 Francis Rd & No 1 Rd', 'Esso 7991 No 1 Rd & Blundell Rd', 'Chevron 5900 Westminster Hwy & No 2 Rd'],
+          ['Petro-Canada station1', 'Esso station2', 'Chevron station3'], map);
+    }
+
+    function getGeoFromAddress(addressList, contentString, map) {
+      var geocoder = new google.maps.Geocoder();
+      var locations = [];
+      console.log("Entering getGeoFromAddress()");
+      var markers = [];
+      var labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var addressLen = addressList.length;
+      for (var i = 0; i < addressLen; i++) {
+        var address = addressList[i];
+        geocoder.geocode({ 'address': address}, function(results, status) {
+          if (status === google.maps.GeocoderStatus.OK) {
+            var latitude = results[0].geometry.location.lat();
+            var longitude = results[0].geometry.location.lng();
+            var location = { lat: latitude, lng: longitude };
+            locations.push(location);
+            console.log(">>>> Location: " + location);
+            var marker = new google.maps.Marker({
+                      position: location,
+                      label: labels[(locations.length - 1) % labels.length]
+                    });
+            var infowindow = new google.maps.InfoWindow({
+                      content: contentString[locations.length - 1]
+                    });
+            marker.addListener('mouseover', function() {
+                      infowindow.open(map, marker);
+                    });
+            marker.addListener('mouseout', function() {
+                                  infowindow.close();
+                                });
+            markers.push(marker);
+            if (locations.length === addressLen) {
+              locateGasStation(markers, map);
+            }
+          }
+        });
+      }
+      console.log("End getGeoFromAddress()");
+    }
+
+    function locateGasStation(markers, map) {
+
+      // Add a marker clusterer to manage the markers.
+      var markerCluster = new MarkerClusterer(map, markers,
+          {imagePath: './images'});
+
     }
   </script>
 </head>

@@ -16,13 +16,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.ze.bean.GasPrice;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.tidy.Configuration;
 import org.w3c.tidy.Tidy;
+
+import com.ze.bean.GasPrice;
 
 public class GasPriceProcessor {
 
@@ -88,7 +89,8 @@ public class GasPriceProcessor {
     finally {
       close(inputStream);
     }
-    return recordList;
+    recordList.stream().sorted((e1, e2) -> Double.compare(e1.getPrice(), e2.getPrice()));
+    return recordList.subList(0, 10);
   }
 
   private GasPrice getGasPrice(final Map<String, String> record) {

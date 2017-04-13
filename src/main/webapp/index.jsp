@@ -218,19 +218,29 @@
     function getGasStationInfo(locationList) {
       var locations = [];
       gasStationDescription = [];
+      var stations = [];
+      var station;
+      var stationName = "";
       for (var i = 0; i < locationList.length; i++) {
+        stationName = "";
         var stationInfo = locationList[i].station.split(' ');
         var j = 0;
         for (j = 0; j < stationInfo.length; j++) {
           if ($.isNumeric(stationInfo[j])) {
             break;
           }
+          else {
+            stationName += stationInfo[j];
+          }
         }
         stationInfo.splice(0, j);
         locations.push(stationInfo.join(' '));
         gasStationDescription.push('Station: ' + locationList[i].station + '<br/>Price: ' + locationList[i].price +
             '<br/>Area: ' + locationList[i].area + '<br/>Last Updated: ' + locationList[i].lastUpdated);
+        station = new Station(stationName, locationList[i].area, locationList[i].price, locationList[i].lastUpdated);
+        stations.push(station);
       }
+      speakStations(stations);
       searchLocation = [];
       searchLen = locations.length;
       curAddressList = locations;

@@ -76,7 +76,7 @@ function getStations(){
 	return stations;
 }
 
-speakStations(getStations());
+//speakStations(getStations());
 
 function speakStations(stations) {
   if(stations === null || stations.length === 0) {

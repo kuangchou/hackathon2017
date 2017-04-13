@@ -152,6 +152,8 @@
     }
 
     var map;
+    var markers = [];
+    var markerCluster;
     function getAddressFromLatLang(lat, lng) {
       console.log("Entering getAddressFromLatLang()");
       var geocoder = new google.maps.Geocoder();
@@ -160,11 +162,16 @@
         lat: lat,
         lng: lng
       };
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: curLoc,
-        scrollwheel: false,
-        zoom: 12
-      });
+      if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: curLoc,
+          scrollwheel: true,
+          zoom: 12
+        });
+      }
+      else {
+        map.setCenter(curLoc);
+      }
       geocoder.geocode({'latLng': latLng}, function (results, status) {
         console.log("After getting address");
         console.log(results);
@@ -271,8 +278,11 @@
     }
 
     function locateGasStation() {
+      if (markerCluster) {
+        markerCluster.clearMarkers();
+        deleteMarkers();
+      }
       var labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      var markers = [];
       for (var i = 0; i < searchLocation.length; i++) {
         var marker = new google.maps.Marker({
           position: searchLocation[i],
@@ -296,7 +306,18 @@
         markers.push(marker);
       }
       // Add a marker clusterer to manage the markers.
-      var markerCluster = new MarkerClusterer(map, markers, {imagePath: './images/m'});
+      markerCluster = new MarkerClusterer(map, markers, {imagePath: './images/m'});
+    }
+
+    function setMapOnAll(aMap) {
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(aMap);
+      }
+    }
+
+    function deleteMarkers() {
+      setMapOnAll(null);
+      markers = [];
     }
 
     function updateCookeis(address, location) {
@@ -315,10 +336,10 @@
 </head>
 <body style="overflow: hidden;">
 <form id="formId" method="get" action="" target="_blank">
-	Your Postal Code:
+	Your Location:
   <div class="speech">
 		<input type="text" name="q" id="transcript" placeholder="Click Microphone to Speak" />
-		<img onclick="startRecognition()" src="./images/speech/mic.gif" />
+		<img style='margin-top: -5px;' onclick="startRecognition()" src="./images/speech/mic.gif" />
 	  </div>
   <input type="button" value="Get Local Gas Prices" onclick="getStationsFromAddress(document.forms[0].elements['q'].value);"/>
 </form>

@@ -80,6 +80,11 @@
 //    }
     // retrieve_zip("example_callback"); // Alert the User's Zipcode
 
+    var googleLocation = Cookies.get('googleLocations');
+    var HISTORY_LOCATION_VALUES = googleLocation !== undefined ? JSON.parse(googleLocation) : [];
+    var googleAddress = Cookies.get('googleAddress');
+    var HISTORY_LOCATION = googleAddress !== undefined ? JSON.parse(googleAddress) : [];
+
     function getLocation() {
       console.log("Entering getLocation()");
       if (navigator.geolocation) {
@@ -119,6 +124,33 @@
       alert("Error Message " + errorMessage);
       console.log("Exiting ConsultantLocator.displayError()");
     }
+
+    function getStationsFromAddress(address) {
+      if (HISTORY_LOCATION_VALUES[HISTORY_LOCATION.indexOf(address)]) {
+        var location = HISTORY_LOCATION_VALUES[HISTORY_LOCATION.indexOf(address)];
+        getAddressFromLatLang(location.lat, location.lng);
+      }
+      else {
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({'address': address}, function (results, status) {
+          if (status === google.maps.GeocoderStatus.OK) {
+            var latitude = results[0].geometry.location.lat();
+            var longitude = results[0].geometry.location.lng();
+            var location = {
+              lat: latitude,
+              lng: longitude
+            };
+            updateCookeis(address, location);
+            getAddressFromLatLang(location.lat, location.lng);
+            console.log(">>>> Location: " + address + ' Location: ' + location.lat + ", " + location.lng);
+          }
+          else {
+            console.log('Error on : ' + address + ' Status: ' + status);
+          }
+        });
+      }
+    }
+
     var map;
     function getAddressFromLatLang(lat, lng) {
       console.log("Entering getAddressFromLatLang()");
@@ -131,7 +163,7 @@
       map = new google.maps.Map(document.getElementById('map'), {
         center: curLoc,
         scrollwheel: false,
-        zoom: 10
+        zoom: 12
       });
       geocoder.geocode({'latLng': latLng}, function (results, status) {
         console.log("After getting address");
@@ -145,7 +177,7 @@
               type: 'GET',
               dataType: 'json',
               data: {
-                zipCode: 'V6X 0L6'
+                zipCode: results[0].address_components[6].short_name
               },
               success: function(result) {
                 if (result && result !== "") {
@@ -165,6 +197,10 @@
       console.log("Entering getAddressFromLatLang()");
     }
     var gasStationDescription = [];
+    var searchLocation = [];
+    var searchLen = 0;
+    var curIndex = 0;
+    var curAddressList;
     function getGasStationInfo(locationList) {
       var locations = [];
       gasStationDescription = [];
@@ -175,72 +211,99 @@
         gasStationDescription.push('Station: ' + locationList[i].station + '<br/>Price: ' + locationList[i].price +
             '<br/>Area: ' + locationList[i].area + '<br/>Last Updated: ' + locationList[i].lastUpdated);
       }
-      getGeoFromAddress(locations);
-    }
-    var googleLocation = Cookies.get('googleLocations');
-    var HISTORY_LOCATION = [];
-    var searchLocation = [];
-    var searchLen = 0;
-
-    function getGeoFromAddress(addressList) {
-      var geocoder = new google.maps.Geocoder();
       searchLocation = [];
-      console.log("Entering getGeoFromAddress()");
-      searchLen = addressList.length;
-      for (var i = 0; i < searchLen; i++) {
-        var address = addressList[i];
-        if (HISTORY_LOCATION[address]) {
-          searchLocation.push(HISTORY_LOCATION[address]);
-        }
-        else {
-          geocoder.geocode({'address': address}, function (results, status) {
-            if (status === google.maps.GeocoderStatus.OK) {
-              var latitude = results[0].geometry.location.lat();
-              var longitude = results[0].geometry.location.lng();
-              var location = {
-                lat: latitude,
-                lng: longitude
-              };
-              HISTORY_LOCATION[address] = location;
-              searchLocation.push(location);
-              console.log(">>>> Location: " + location);
-            }
-            else {
-              console.log('Error on : ' + address + ' Status: ' + status);
-            }
-          });
-        }
+      searchLen = locations.length;
+      curAddressList = locations;
+      curIndex = 0;
+      getGoogleLocation();
+    }
+
+    function getGeoFromAddress() {
+      if (searchLocation.length === searchLen) {
+        locateGasStation();
       }
-      locateGasStation();
+      else if (searchLocation[curIndex] === undefined) {
+        setTimeout(getGeoFromAddress, 100);
+      }
+      else {
+        // Go to next one
+        curIndex++;
+        getGoogleLocation();
+      }
+    }
+    function getGoogleLocation() {
+      console.log("Entering getGeoFromAddress()");
+      var address = curAddressList[curIndex];
+      if (HISTORY_LOCATION_VALUES[HISTORY_LOCATION.indexOf(address)]) {
+        searchLocation.push(HISTORY_LOCATION_VALUES[HISTORY_LOCATION.indexOf(address)]);
+        getGeoFromAddress();
+      }
+      else {
+        getGeoInfo(address);
+      }
       console.log("End getGeoFromAddress()");
     }
 
-    function locateGasStation() {
-      if (searchLocation.length !== searchLen) {
-        setTimeout(locateGasStation, 1000);
-      }
-      else {
-        var labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        var markers = [];
-        for (var i = 0; i < searchLocation.length; i++) {
-          var marker = new google.maps.Marker({
-            position: searchLocation[i],
-            label: labels[i % labels.length]
-          });
-          var infowindow = new google.maps.InfoWindow({
-            content: gasStationDescription[searchLocation.length - 1]
-          });
-          marker.addListener('mouseover', function () {
-            infowindow.open(map, marker);
-          });
-          marker.addListener('mouseout', function () {
-            infowindow.close();
-          });
-          markers.push(marker);
+    function getGeoInfo(address) {
+      var geocoder = new google.maps.Geocoder();
+      geocoder.geocode({'address': address}, function (results, status) {
+        if (status === google.maps.GeocoderStatus.OK) {
+          var latitude = results[0].geometry.location.lat();
+          var longitude = results[0].geometry.location.lng();
+          var location = {
+            lat: latitude,
+            lng: longitude
+          };
+          updateCookeis(address, location);
+          searchLocation.push(location);
+          console.log(">>>> Location: " + address + ' Location: ' + location.lat + ", " + location.lng);
+          getGeoFromAddress();
         }
-        // Add a marker clusterer to manage the markers.
-        var markerCluster = new MarkerClusterer(map, markers, {imagePath: './images/m'});
+        else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+          console.log('Error on : ' + address + ' Status: ' + status);
+          setTimeout(getGeoFromAddress, 500);
+        }
+        else {
+          searchLocation.push({lat: -1, lng: -1});
+          getGeoFromAddress();
+        }
+      });
+    }
+
+    function locateGasStation() {
+      var labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var markers = [];
+      for (var i = 0; i < searchLocation.length; i++) {
+        var marker = new google.maps.Marker({
+          position: searchLocation[i],
+          label: labels[i % labels.length]
+        });
+        var infowindow = new google.maps.InfoWindow({
+          content: gasStationDescription[i]
+        });
+        google.maps.event.addListener(marker, 'mouseover', function () {
+          infowindow.open(map, marker);
+        });
+        google.maps.event.addListener(marker, 'mouseout', function () {
+          infowindow.close();
+        });
+        markers.push(marker);
       }
+      // Add a marker clusterer to manage the markers.
+      var markerCluster = new MarkerClusterer(map, markers, {imagePath: './images/m'});
+    }
+
+    function updateCookeis(address, location) {
+      if (HISTORY_LOCATION.indexOf(address) === -1) {
+        HISTORY_LOCATION.push(address);
+        HISTORY_LOCATION_VALUES.push(location);
+      }
+      var date = new Date();
+      date.setTime(date.getTime() + (24 * 60 * 60 *1000));
+      document.cookie = 'googleLocations=' + JSON.stringify(HISTORY_LOCATION_VALUES) + '; expires=' + date.toGMTString() +
+          '; path=/';
+      document.cookie = 'googleAddress=' + JSON.stringify(HISTORY_LOCATION) + '; expires=' + date.toGMTString() +
+                '; path=/';
     }
   </script>
 </head>
@@ -251,7 +314,7 @@
 		<input type="text" name="q" id="transcript" placeholder="Click Microphone to Speak" />
 		<img onclick="startRecognition()" src="./images/speech/mic.gif" />
 	  </div>
-  <input type="submit" value="Get Local Gas Prices"/>
+  <input type="button" value="Get Local Gas Prices" onclick="getStationsFromAddress(document.forms[0].elements['q'].value);"/>
 </form>
 <div id="map"></div>
 </body>

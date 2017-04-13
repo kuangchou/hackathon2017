@@ -15,7 +15,7 @@
     /* Always set the map height explicitly to define the size of the div
      * element that contains the map. */
     #map {
-      height: 95%;
+      height: 82%;
     }
 
     /* Optional: Makes the sample page fill the window. */
@@ -278,15 +278,21 @@
           position: searchLocation[i],
           label: labels[i % labels.length]
         });
+        var content = gasStationDescription[i];
         var infowindow = new google.maps.InfoWindow({
-          content: gasStationDescription[i]
+          content: content
         });
-        google.maps.event.addListener(marker, 'mouseover', function () {
-          infowindow.open(map, marker);
-        });
-        google.maps.event.addListener(marker, 'mouseout', function () {
-          infowindow.close();
-        });
+        google.maps.event.addListener(marker, 'mouseover', (function (marker, content, infowindow) {
+          return function() {
+            infowindow.setContent(content);
+            infowindow.open(map, marker);
+          };
+        })(marker, content, infowindow));
+        google.maps.event.addListener(marker, 'mouseout', (function (marker, content, infowindow) {
+          return function() {
+            infowindow.close();
+          };
+        })(marker, content, infowindow));
         markers.push(marker);
       }
       // Add a marker clusterer to manage the markers.
@@ -307,7 +313,7 @@
     }
   </script>
 </head>
-<body>
+<body style="overflow: hidden;">
 <form id="formId" method="get" action="" target="_blank">
 	Your Postal Code:
   <div class="speech">

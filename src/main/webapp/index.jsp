@@ -174,6 +174,10 @@
       else {
         map.setCenter(curLoc);
       }
+      if (markerCluster) {
+        markerCluster.clearMarkers();
+        deleteMarkers();
+      }
       geocoder.geocode({'latLng': latLng}, function (results, status) {
         console.log("After getting address");
         console.log(results);
@@ -294,10 +298,6 @@
     }
 
     function locateGasStation() {
-      if (markerCluster) {
-        markerCluster.clearMarkers();
-        deleteMarkers();
-      }
       var labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       for (var i = 0; i < searchLocation.length; i++) {
         var marker = new google.maps.Marker({

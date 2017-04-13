@@ -29,6 +29,7 @@
   <script src="./javascript/common/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
   <script src="./javascript/common/js-cookie/js.cookie-2.0.2.min.js" type="text/javascript"></script>
   <link rel="stylesheet" type="text/css" href="./styles/speech.css"/>
+  <link rel="stylesheet" type="text/css" href="./styles/loading.css"/>
   <script type="text/javascript" src="./javascript/speech/gasSpeech.js"></script>
   <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js">
       </script>
@@ -126,6 +127,7 @@
     }
 
     function getStationsFromAddress(address) {
+      $('#searchMask').show();
       if (HISTORY_LOCATION_VALUES[HISTORY_LOCATION.indexOf(address)]) {
         var location = HISTORY_LOCATION_VALUES[HISTORY_LOCATION.indexOf(address)];
         getAddressFromLatLang(location.lat, location.lng);
@@ -208,12 +210,19 @@
     var searchLen = 0;
     var curIndex = 0;
     var curAddressList;
+    var overLimitedLocation;
     function getGasStationInfo(locationList) {
       var locations = [];
       gasStationDescription = [];
       for (var i = 0; i < locationList.length; i++) {
         var stationInfo = locationList[i].station.split(' ');
-        stationInfo.splice(0, 1);
+        var j = 0;
+        for (j = 0; j < stationInfo.length; j++) {
+          if ($.isNumeric(stationInfo[j])) {
+            break;
+          }
+        }
+        stationInfo.splice(0, j);
         locations.push(stationInfo.join(' '));
         gasStationDescription.push('Station: ' + locationList[i].station + '<br/>Price: ' + locationList[i].price +
             '<br/>Area: ' + locationList[i].area + '<br/>Last Updated: ' + locationList[i].lastUpdated);
@@ -268,6 +277,13 @@
         }
         else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
           console.log('Error on : ' + address + ' Status: ' + status);
+          overLimitedLocation = address;
+          if (overLimitedLocation == address) {
+            searchLocation.push({
+              lat: -1,
+              lng: -1
+            });
+          }
           setTimeout(getGeoFromAddress, 500);
         }
         else {
@@ -307,6 +323,7 @@
       }
       // Add a marker clusterer to manage the markers.
       markerCluster = new MarkerClusterer(map, markers, {imagePath: './images/m'});
+      $('#searchMask').hide();
     }
 
     function setMapOnAll(aMap) {
@@ -335,6 +352,7 @@
   </script>
 </head>
 <body style="overflow: hidden;">
+<div id="searchMask" class="lmask"></div>
 <form id="formId" method="get" action="" target="_blank">
 	Your Location:
   <div class="speech">
